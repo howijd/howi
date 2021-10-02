@@ -53,6 +53,7 @@ func TestOptions(t *testing.T) {
 		{"basic1", nil, nil, "", nil},
 		{"basic2", []string{"opt1", "opt2"}, nil, "opt3", ErrInvalidValue},
 		{"basic3", []string{"opt1", "opt2"}, nil, "opt2", nil},
+		{"basic3", []string{"opt1", "opt2"}, nil, "", ErrMissingOption},
 	}
 
 	for _, tt := range tests {
