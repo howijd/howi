@@ -19,7 +19,7 @@ func (f *OptionFlag) Parse(args *[]string) (ok bool, err error) {
 	})
 
 	if err != nil {
-		return false, err
+		return f.isPresent, err
 	}
 
 	if len(f.variable.String()) > 0 {

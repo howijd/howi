@@ -24,9 +24,12 @@ func testflags() []testflag {
 	return []testflag{
 		// valid
 		{"flag", nil, "def-val", false, false, false, true},
+		{"fl", nil, "def-val", false, false, false, true},
+		{"flag", nil, "def-val", false, false, false, true},
+		{"flag", nil, "def-val", false, false, false, true},
 		{"flag2", nil, nil, false, true, false, true},
 		{"flag3", nil, nil, true, false, false, true},
-		{"flag-sub-1", nil, nil, false, false, false, true},
+		{"flag-sub-1", []string{"sub", "f"}, "flag sub", false, false, false, true},
 		{"f", nil, "def-val", false, false, true, true},
 		{"flag2", nil, "def-val", false, false, false, true},
 		// invalid
@@ -129,15 +132,18 @@ func TestAliasesString(t *testing.T) {
 			}
 			flag, _ := New(tt.name, tt.aliases...)
 			if len(tt.aliases) > 0 {
-				expected := strings.Join(tt.aliases, ",")
-				if expected != flag.AliasesString() {
-					t.Errorf(
-						"flag %q expected alias str %q got (%q)",
-						tt.name,
-						expected,
-						flag.AliasesString(),
-					)
+				str := flag.AliasesString()
+				for _, a := range tt.aliases {
+					if !strings.Contains(str, a) {
+						t.Errorf(
+							"flag %q expected alias str to contain %q got (%q)",
+							tt.name,
+							a,
+							str,
+						)
+					}
 				}
+
 			}
 		})
 	}
@@ -276,5 +282,39 @@ func TestStringFlag(t *testing.T) {
 	}
 	if flag.Value().String() != "a" {
 		t.Error("expected string value to be \"a\" got ", flag.Value().String())
+	}
+}
+
+func TestVariable(t *testing.T) {
+	tval := "test value"
+	for _, tt := range testflags() {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.valid {
+				return
+			}
+			flag, _ := New(tt.name)
+			args := []string{flag.Flag(), tval}
+			if flag.IsGlobal() {
+				t.Error("flag should not be global by default")
+			}
+
+			ok, err := flag.Parse(&args)
+			if !ok {
+				t.Errorf("expexted flag %q to parse", tt.name)
+			}
+			if err != nil {
+				t.Errorf("dif not expect error while parsing %q got %q", tt.name, err)
+			}
+			if !flag.IsGlobal() {
+				t.Error("flag should not be global")
+			}
+			v := flag.Variable()
+			if v.Key() != tt.name {
+				t.Errorf("expected flag var.Key() to eq %q got %q", tt.name, v.Key())
+			}
+			if v.String() != tval {
+				t.Errorf("expected flag var.String() to eq %q got %q", tval, v.String())
+			}
+		})
 	}
 }
