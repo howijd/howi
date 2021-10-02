@@ -143,7 +143,6 @@ func TestAliasesString(t *testing.T) {
 						)
 					}
 				}
-
 			}
 		})
 	}
@@ -314,6 +313,36 @@ func TestVariable(t *testing.T) {
 			}
 			if v.String() != tval {
 				t.Errorf("expected flag var.String() to eq %q got %q", tval, v.String())
+			}
+		})
+	}
+}
+
+func TestUnset(t *testing.T) {
+	tval := "test value"
+	for _, tt := range testflags() {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.valid {
+				return
+			}
+			flag, _ := New(tt.name)
+			flag.Default(tt.defval)
+			args := []string{flag.Flag(), tval}
+			flag.Parse(&args)
+
+			if flag.Value().String() != tval {
+				t.Errorf("expected flag var.String() to eq %q got %q", tval, flag.String())
+			}
+
+			flag.Unset()
+
+			exp := ""
+			if tt.defval != nil {
+				exp = fmt.Sprint(tt.defval)
+			}
+
+			if flag.Value().String() != exp {
+				t.Errorf("expected flag value to eq %q got %q", exp, flag.Value().String())
 			}
 		})
 	}

@@ -65,6 +65,8 @@ type (
 		IsRequired() bool
 		// Set flag default value
 		Default(def ...interface{}) vars.Value
+		// String calls Value().String()
+		String() string
 	}
 
 	// Common is default string flag. Common flag ccan be used to

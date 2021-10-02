@@ -134,6 +134,11 @@ func (f *Common) Parse(args *[]string) (bool, error) {
 	})
 }
 
+// String calls Value().String().
+func (f *Common) String() string {
+	return f.Value().String()
+}
+
 // Parse value for the flag from given string.
 // It returns true if flag has been parsed
 // and error if flag has been already parsed.
