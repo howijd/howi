@@ -142,7 +142,6 @@ func (f *Common) String() string {
 // Parse value for the flag from given string.
 // It returns true if flag has been parsed
 // and error if flag has been already parsed.
-//nolint:cyclop,funlen,gocognit // This function is complex and should be simplified
 func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error) {
 	if f.parsed {
 		return false, fmt.Errorf("%w: %s", ErrFlagAlreadyParsed, f.name)
@@ -154,12 +153,26 @@ func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error
 	if args == nil || len(*args) == 0 {
 		return f.isPresent, nil
 	}
+	return f.parseArgs(args, read)
+}
 
+func (f *Common) parseAll(args *[]string, read func(vars.Value) error) (ok bool, err error) {
+	f.isPresent, err = f.parseArgs(args, read)
+
+	// search more
+	if f.isPresent {
+		for isPresent, err := f.parseArgs(args, read); isPresent && err != nil; {
+		}
+	}
+
+	return f.isPresent, err
+}
+
+//nolint: funlen,gocognit,cyclop
+func (f *Common) parseArgs(args *[]string, read func(vars.Value) error) (bool, error) {
 	seek := false
-
 	var flag string
 	value := f.defval
-
 	for i, arg := range *args {
 		if len(arg) == 0 {
 			return f.isPresent, nil
@@ -167,7 +180,6 @@ func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error
 
 		if arg[0] != '-' && !seek {
 			f.pos++
-
 			continue
 		}
 
@@ -205,7 +217,6 @@ func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error
 			if err := read(value); err != nil {
 				return f.isPresent, err
 			}
-
 			goto validate
 		}
 
@@ -217,13 +228,11 @@ func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error
 				*args = append((*args)[:i], (*args)[i+1:]...)
 				if seek {
 					hasAlias = true
-
 					break
 				}
 				if err := read(value); err != nil {
 					return f.isPresent, err
 				}
-
 				goto validate
 			}
 		}

@@ -13,8 +13,9 @@ import (
 
 // Parse the OptionFlag.
 func (f *OptionFlag) Parse(args *[]string) (ok bool, err error) {
-	f.isPresent, err = f.parse(args, func(v vars.Value) (err error) {
-		f.variable = vars.New(f.name, v.String())
+	var opts []string
+	f.isPresent, err = f.parseAll(args, func(v vars.Value) (err error) {
+		opts = append(opts, v.String())
 		return err
 	})
 
@@ -22,19 +23,33 @@ func (f *OptionFlag) Parse(args *[]string) (ok bool, err error) {
 		return f.isPresent, err
 	}
 
-	if len(f.variable.String()) > 0 {
-		opts := strings.Split(f.variable.String(), ",")
-		if len(opts) > 0 {
-			for _, o := range opts {
-				if _, isSet := f.opts[o]; !isSet {
-					return f.isPresent, fmt.Errorf("%w: (%s=%q)", ErrInvalidValue, f.name, f.variable.String())
-				}
-				f.opts[o] = true
+	if len(opts) > 0 {
+		for _, o := range opts {
+			if _, isSet := f.opts[o]; !isSet {
+				return f.isPresent, fmt.Errorf("%w: (%s=%q)", ErrInvalidValue, f.name, f.variable.String())
 			}
+			f.opts[o] = true
 		}
+		f.variable = vars.New(f.name, strings.Join(opts, ","))
 	} else {
 		return f.isPresent, ErrMissingOption
 	}
-
 	return f.isPresent, err
+}
+
+// Option return parsed options.
+func (f *OptionFlag) Options() (present []string) {
+	defvals := strings.Split(f.defval.String(), ",")
+	for o, set := range f.opts {
+		if set {
+			present = append(present, o)
+		} else if len(defvals) > 0 {
+			for _, do := range defvals {
+				if o == do {
+					present = append(present, o)
+				}
+			}
+		}
+	}
+	return present
 }

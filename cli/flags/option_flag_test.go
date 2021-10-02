@@ -26,8 +26,8 @@ func TestOptionFlagFalse(t *testing.T) {
 		t.Error("expected option flag parser to return !present and err, ", present, err)
 	}
 
-	if flag.Value().String() != "d" {
-		t.Error("expected option value to be \"d\" got ", flag.Value().String())
+	if flag.Value().String() != "" {
+		t.Error("expected option value to be \"\" got ", flag.Value().String())
 	}
 }
 
@@ -91,6 +91,36 @@ func TestOptionName(t *testing.T) {
 				if flag != nil {
 					t.Errorf("invalid flag %q should be <nil> got %#v", tt.name, flag)
 				}
+			}
+		})
+	}
+}
+
+func TestMultiOpt(t *testing.T) {
+	var tests = []struct {
+		name string
+		opts []string
+	}{
+		{"basic1", []string{"opt1", "opt2"}},
+		{"basic1", []string{"opt1", "opt2"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, _ := NewOptionFlag(tt.name, tt.opts)
+
+			var args []string
+			for _, o := range tt.opts {
+				args = append(args, []string{"--" + tt.name, o}...)
+			}
+
+			ok, err := flag.Parse(&args)
+			if !ok {
+				t.Errorf("expected to parse opt multi flag %q got %q", tt.name, err)
+			}
+			opts := flag.Options()
+			if len(opts) != len(tt.opts) {
+				t.Errorf("epexted flag %q to have %d opts got %d", tt.name, len(tt.opts), len(opts))
 			}
 		})
 	}
