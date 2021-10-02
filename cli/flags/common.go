@@ -153,15 +153,15 @@ func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error
 	if args == nil || len(*args) == 0 {
 		return f.isPresent, nil
 	}
-	return f.parseArgs(args, read)
+	return f.parseArgs(args, read, false)
 }
 
 func (f *Common) parseAll(args *[]string, read func(vars.Value) error) (ok bool, err error) {
-	f.isPresent, err = f.parseArgs(args, read)
+	f.isPresent, err = f.parseArgs(args, read, true)
 
 	// search more
 	if f.isPresent {
-		for isPresent, err := f.parseArgs(args, read); isPresent && err != nil; {
+		for isPresent, err := f.parseArgs(args, read, true); isPresent && err != nil; {
 		}
 	}
 
@@ -169,7 +169,7 @@ func (f *Common) parseAll(args *[]string, read func(vars.Value) error) (ok bool,
 }
 
 //nolint: funlen,gocognit,cyclop
-func (f *Common) parseArgs(args *[]string, read func(vars.Value) error) (bool, error) {
+func (f *Common) parseArgs(args *[]string, read func(vars.Value) error, all bool) (bool, error) {
 	seek := false
 	var flag string
 	value := f.defval
@@ -248,7 +248,7 @@ validate:
 		return f.isPresent, fmt.Errorf("%w: did not find value for flag %q", ErrFlag, f.name)
 	}
 	// set default
-	if !f.isPresent && !f.defval.Empty() {
+	if !f.isPresent && !f.defval.Empty() && !all {
 		return false, read(f.defval)
 	}
 

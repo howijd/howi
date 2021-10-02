@@ -14,23 +14,28 @@ import (
 // Parse the OptionFlag.
 func (f *OptionFlag) Parse(args *[]string) (ok bool, err error) {
 	var opts []string
+
+	if !f.defval.Empty() {
+		opts = strings.Split(f.defval.String(), "|")
+	}
+
 	f.isPresent, err = f.parseAll(args, func(v vars.Value) (err error) {
 		opts = append(opts, v.String())
 		return err
 	})
 
-	if err != nil {
+	if err != nil && f.defval.Empty() {
 		return f.isPresent, err
 	}
 
 	if len(opts) > 0 {
 		for _, o := range opts {
 			if _, isSet := f.opts[o]; !isSet {
-				return f.isPresent, fmt.Errorf("%w: (%s=%q)", ErrInvalidValue, f.name, f.variable.String())
+				return f.isPresent, fmt.Errorf("%w: (%s=%q)", ErrInvalidValue, f.name, o)
 			}
 			f.opts[o] = true
 		}
-		f.variable = vars.New(f.name, strings.Join(opts, ","))
+		f.variable = vars.New(f.name, strings.Join(opts, "|"))
 	} else {
 		return f.isPresent, ErrMissingOption
 	}
@@ -39,17 +44,19 @@ func (f *OptionFlag) Parse(args *[]string) (ok bool, err error) {
 
 // Option return parsed options.
 func (f *OptionFlag) Options() (present []string) {
-	defvals := strings.Split(f.defval.String(), ",")
 	for o, set := range f.opts {
 		if set {
 			present = append(present, o)
-		} else if len(defvals) > 0 {
-			for _, do := range defvals {
-				if o == do {
-					present = append(present, o)
-				}
-			}
 		}
 	}
 	return present
+}
+
+// Default sets flag default.
+func (f *OptionFlag) Default(def ...interface{}) vars.Value {
+	if len(def) > 0 && def[0] != nil && f.defval.Empty() {
+		var defopts = def[0].([]string)
+		f.defval = vars.NewValue(strings.Join(defopts, "|"))
+	}
+	return f.defval
 }

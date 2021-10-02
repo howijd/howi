@@ -125,3 +125,31 @@ func TestMultiOpt(t *testing.T) {
 		})
 	}
 }
+
+func TestOptionFlagDefaults(t *testing.T) {
+	var tests = []struct {
+		name     string
+		opts     []string
+		defaults []string
+	}{
+		{"basic1", []string{"opt1", "opt2"}, []string{"opt1"}},
+		{"basic2", []string{"opt1", "opt2"}, []string{"opt1", "opt2"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, _ := NewOptionFlag(tt.name, tt.opts)
+			flag.Default(tt.defaults)
+
+			var args []string
+			_, err := flag.Parse(&args)
+			if err != nil {
+				t.Errorf("expected to parse opt flag %q got %q", tt.name, err)
+			}
+			opts := flag.Options()
+			if len(opts) != len(tt.defaults) {
+				t.Errorf("epexted flag %q to have %d opts got %d", tt.name, len(tt.defaults), len(opts))
+			}
+		})
+	}
+}
