@@ -1,4 +1,4 @@
-module howijd.org/howi/v8
+module pkg.howijd.network/howi/v8
 
 go 1.16
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/mkungla/vars/v5"
-	"howijd.org/howi/v8/namespace"
+	"pkg.howijd.network/howi/v8/namespace"
 )
 
 var (
