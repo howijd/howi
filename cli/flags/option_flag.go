@@ -18,6 +18,10 @@ func (f *OptionFlag) Parse(args *[]string) (ok bool, err error) {
 		return err
 	})
 
+	if err != nil {
+		return false, err
+	}
+
 	if len(f.variable.String()) > 0 {
 		opts := strings.Split(f.variable.String(), ",")
 		if len(opts) > 0 {
