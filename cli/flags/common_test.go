@@ -43,7 +43,7 @@ func testflags() []testflag {
 func TestName(t *testing.T) {
 	for _, tt := range testflags() {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, err := New(tt.name)
+			flag, err := New(tt.name, tt.aliases...)
 			if tt.valid {
 				if err != nil {
 					t.Errorf("valid flag %q did not expect error got %q", tt.name, err)
@@ -132,6 +132,10 @@ func TestAliases(t *testing.T) {
 					len(flag.Aliases()),
 					strings.Join(flag.Aliases(), ","),
 				)
+			}
+
+			if len(strings.Join(tt.aliases, ",")) != len(flag.AliasesString()) {
+				t.Errorf("unexpected alias string %q", flag.AliasesString())
 			}
 		})
 	}

@@ -57,12 +57,8 @@ func (f *Common) AliasesString() string {
 	aliases := []string{}
 
 	for _, a := range f.aliases {
-		if a == f.name {
-			continue
-		}
 		if len(a) == 1 {
 			aliases = append(aliases, "-%s"+a)
-
 			continue
 		}
 		aliases = append(aliases, "--%s"+a)
