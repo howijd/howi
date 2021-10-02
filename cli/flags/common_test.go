@@ -29,7 +29,7 @@ func testflags() []testflag {
 		{"flag", nil, "def-val", false, false, false, true},
 		{"flag2", nil, nil, false, true, false, true},
 		{"flag3", nil, nil, true, false, false, true},
-		{"flag-sub-1", []string{"sub", "f"}, "flag sub", false, false, false, true},
+		{"flag-sub-1", []string{"a", "b"}, "flag sub", false, false, false, true},
 		{"f", nil, "def-val", false, false, true, true},
 		{"flag2", nil, "def-val", false, false, false, true},
 		// invalid
@@ -134,12 +134,28 @@ func TestAliases(t *testing.T) {
 				)
 			}
 
-			if len(strings.Join(tt.aliases, ",")) != len(flag.AliasesString()) {
+			if len(tt.aliases) > 0 && len(flag.AliasesString()) <= len(tt.aliases) {
 				t.Errorf("unexpected alias string %q", flag.AliasesString())
 			}
 		})
 	}
 }
+
+func TestAliasParse(t *testing.T) {
+	for _, tt := range testflags() {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.valid || len(tt.aliases) == 0 || len(tt.aliases[0]) > 1 {
+				return
+			}
+			flag, _ := New(tt.name, tt.aliases...)
+			args := []string{"-" + tt.aliases[0], "value1"}
+			if ok, err := flag.Parse(&args); !ok || err != nil {
+				t.Error("expected string flag parser to return ok, ", err)
+			}
+		})
+	}
+}
+
 func TestAliasesString(t *testing.T) {
 	for _, tt := range testflags() {
 		t.Run(tt.name, func(t *testing.T) {

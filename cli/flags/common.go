@@ -58,10 +58,10 @@ func (f *Common) AliasesString() string {
 
 	for _, a := range f.aliases {
 		if len(a) == 1 {
-			aliases = append(aliases, "-%s"+a)
+			aliases = append(aliases, "-"+a)
 			continue
 		}
-		aliases = append(aliases, "--%s"+a)
+		aliases = append(aliases, "--"+a)
 	}
 	return strings.Join(aliases, ",")
 }
@@ -139,11 +139,8 @@ func (f *Common) String() string {
 // It returns true if flag has been parsed
 // and error if flag has been already parsed.
 func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error) {
-	if f.parsed {
-		return false, fmt.Errorf("%w: %s", ErrFlagAlreadyParsed, f.name)
-	}
-	if f.isPresent {
-		return f.isPresent, nil
+	if f.parsed || f.isPresent {
+		return f.isPresent, fmt.Errorf("%w: %s", ErrFlagAlreadyParsed, f.name)
 	}
 
 	if args == nil || len(*args) == 0 {
@@ -236,6 +233,7 @@ func (f *Common) parseArgs(args *[]string, read func(vars.Value) error, all bool
 	}
 
 validate:
+	f.parsed = true
 	// was it global
 	if !f.variable.Empty() && f.pos == 0 {
 		f.global = true
