@@ -106,3 +106,19 @@ func TestNumFlagFloat(t *testing.T) {
 		})
 	}
 }
+
+func TestNumName(t *testing.T) {
+	for _, tt := range testflags() {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, err := NewNumFlag(tt.name)
+			if !tt.valid {
+				if err == nil {
+					t.Errorf("invalid flag %q expected error got <nil>", tt.name)
+				}
+				if flag != nil {
+					t.Errorf("invalid flag %q should be <nil> got %#v", tt.name, flag)
+				}
+			}
+		})
+	}
+}

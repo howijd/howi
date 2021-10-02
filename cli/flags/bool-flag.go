@@ -5,6 +5,8 @@
 package flags
 
 import (
+	"testing"
+
 	"github.com/mkungla/vars/v5"
 )
 
@@ -14,4 +16,20 @@ func (f *BoolFlag) Parse(args *[]string) (bool, error) {
 		f.variable, err = vars.NewTyped(f.name, v.String(), vars.TypeBool)
 		return err
 	})
+}
+
+func TesBooltName(t *testing.T) {
+	for _, tt := range testflags() {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, err := NewBoolFlag(tt.name)
+			if !tt.valid {
+				if err == nil {
+					t.Errorf("invalid flag %q expected error got <nil>", tt.name)
+				}
+				if flag != nil {
+					t.Errorf("invalid flag %q should be <nil> got %#v", tt.name, flag)
+				}
+			}
+		})
+	}
 }
