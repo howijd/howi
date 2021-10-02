@@ -16,7 +16,7 @@ import (
 
 var (
 	ErrFlag              = errors.New("flag error")
-	ErrMissingOption     = errors.New("need to specify atleast one option")
+	ErrMissingOption     = errors.New("need atleast one option")
 	ErrInvalidValue      = errors.New("invalid value for flag")
 	ErrFlagAlreadyParsed = errors.New("flag is already parsed")
 )
@@ -148,6 +148,9 @@ func NewBoolFlag(name string, aliases ...string) (*BoolFlag, error) {
 // NewOptionFlag returns new string flag. Argument "opts" is string slice
 // of options this flag accepts.
 func NewOptionFlag(name string, opts []string, aliases ...string) (*OptionFlag, error) {
+	if len(opts) == 0 {
+		return nil, ErrMissingOption
+	}
 	c, err := newCommon(name, aliases...)
 	if err != nil {
 		return nil, err

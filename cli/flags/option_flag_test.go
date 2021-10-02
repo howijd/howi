@@ -4,7 +4,10 @@
 
 package flags
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestOptionFlag(t *testing.T) {
 	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
@@ -36,5 +39,42 @@ func TestOptionFlagEmpty(t *testing.T) {
 
 	if flag.Value().String() != "" {
 		t.Error("expected option value to be \"\" got ", flag.Value().String())
+	}
+}
+
+func TestOptions(t *testing.T) {
+	var tests = []struct {
+		name   string
+		opts   []string
+		defval interface{}
+		val    string
+		err    error
+	}{
+		{"basic1", nil, nil, "", nil},
+		{"basic2", []string{"opt1", "opt2"}, nil, "opt3", ErrInvalidValue},
+		{"basic3", []string{"opt1", "opt2"}, nil, "opt2", nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, err := NewOptionFlag(tt.name, tt.opts)
+			if len(tt.opts) == 0 {
+				if !errors.Is(err, ErrMissingOption) {
+					t.Error("expected error while creating opt flag got: ", err)
+				}
+				return
+			}
+
+			if len(tt.opts) > 0 && err != nil {
+				t.Error("did not expect error while creating opt flag got: ", err)
+				return
+			}
+
+			args := []string{"--" + tt.name, tt.val}
+			_, err = flag.Parse(&args)
+			if !errors.Is(err, tt.err) {
+				t.Errorf("expected error %q got %q", tt.err, err)
+			}
+		})
 	}
 }
