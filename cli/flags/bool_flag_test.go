@@ -12,7 +12,7 @@ import (
 )
 
 func TestBoolFlagPresent(t *testing.T) {
-	flag, _ := NewBoolFlag("some-bool-flag")
+	flag, _ := Bool("some-bool-flag")
 	if present, err := flag.Parse([]string{"--some-bool-flag"}); !present || err != nil {
 		t.Error("expected bool flag parser to return present, nil got ", present, err)
 	}
@@ -56,7 +56,7 @@ func booltests() []booltest {
 func TestBoolFlagValues(t *testing.T) {
 	for _, tt := range booltests() {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, _ := NewBoolFlag(tt.name, tt.alias)
+			flag, _ := Bool(tt.name, tt.alias)
 			args := fmt.Sprintf("--%s=%s", tt.name, tt.arg)
 			if present, err := flag.Parse([]string{args}); !present || err != nil {
 				t.Error("expected bool flag parser to return present, nil got ", present, err)
@@ -84,7 +84,7 @@ func TestBoolFlagValues(t *testing.T) {
 func TestBoolFlagAliasValues(t *testing.T) {
 	for _, tt := range booltests() {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, _ := NewBoolFlag(tt.name, tt.alias)
+			flag, _ := Bool(tt.name, tt.alias)
 			args := fmt.Sprintf("-%s=%s", tt.alias, tt.str)
 			if present, err := flag.Parse([]string{args}); !present || err != nil {
 				t.Error("expected bool flag parser to return present, nil got ", present, err)
@@ -103,7 +103,7 @@ func TestBoolFlagAliasValues(t *testing.T) {
 }
 
 func TestBoolFlagNotPresent(t *testing.T) {
-	flag, _ := NewBoolFlag("some-flag")
+	flag, _ := Bool("some-flag")
 	if ok, err := flag.Parse([]string{"--some-flag-2"}); ok {
 		t.Error("expected bool flag parser to return not ok, ", ok, err)
 	}
@@ -124,7 +124,7 @@ func TestBoolFlagNotPresent(t *testing.T) {
 func TestBooltName(t *testing.T) {
 	for _, tt := range testflags() {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, err := NewBoolFlag(tt.name)
+			flag, err := Bool(tt.name)
 			if !tt.valid {
 				if err == nil {
 					t.Errorf("invalid flag %q expected error got <nil>", tt.name)

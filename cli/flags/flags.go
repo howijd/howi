@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/howijd/howi/v9/namespace"
 	"github.com/mkungla/vars/v5"
-	"pkg.howijd.network/howi/v8/namespace"
 )
 
 var (
@@ -108,6 +108,36 @@ type (
 	BoolFlag struct {
 		Common
 	}
+
+	// DurationFlag defines a time.Duration flag with specified name
+	DurationFlag struct {
+		Common
+	}
+
+	// Float64 defines a float64 flag with specified name
+	Float64Flag struct {
+		Common
+	}
+
+	// IntFlag defines an int flag with specified name,
+	IntFlag struct {
+		Common
+	}
+
+	// Int64Flag defines an int64 flag with specified name
+	Int64Flag struct {
+		Common
+	}
+
+	// UintFlag defines a uint flag with specified name
+	UintFlag struct {
+		Common
+	}
+
+	// Uint64Flag defines a uint64 flag with specified name
+	Uint64Flag struct {
+		Common
+	}
 )
 
 // New returns new common string flag. Argument "a" can be any nr of aliases.
@@ -118,37 +148,6 @@ func New(name string, aliases ...string) (*Common, error) {
 	}
 	f.variable = vars.New(name, "")
 	return f, err
-}
-
-// NewBoolFlag returns new bool flag. Argument "a" can be any nr of aliases.
-func NewBoolFlag(name string, aliases ...string) (*BoolFlag, error) {
-	c, err := newCommon(name, aliases...)
-	if err != nil {
-		return nil, err
-	}
-	f := &BoolFlag{*c}
-	f.variable, _ = vars.NewTyped(name, "false", vars.TypeBool)
-	return f, nil
-}
-
-// NewOptionFlag returns new string flag. Argument "opts" is string slice
-// of options this flag accepts.
-func NewOptionFlag(name string, opts []string, aliases ...string) (*OptionFlag, error) {
-	if len(opts) == 0 {
-		return nil, ErrMissingOptions
-	}
-	c, err := newCommon(name, aliases...)
-	if err != nil {
-		return nil, err
-	}
-	f := &OptionFlag{Common: *c}
-	f.opts = make(map[string]bool, len(opts))
-	for _, o := range opts {
-		f.opts[o] = false
-	}
-
-	f.variable = vars.New(name, "")
-	return f, nil
 }
 
 func newCommon(name string, aliases ...string) (*Common, error) {

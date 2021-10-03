@@ -11,6 +11,26 @@ import (
 	"github.com/mkungla/vars/v5"
 )
 
+// Option returns new string flag. Argument "opts" is string slice
+// of options this flag accepts.
+func Option(name string, opts []string, aliases ...string) (*OptionFlag, error) {
+	if len(opts) == 0 {
+		return nil, ErrMissingOptions
+	}
+	c, err := newCommon(name, aliases...)
+	if err != nil {
+		return nil, err
+	}
+	f := &OptionFlag{Common: *c}
+	f.opts = make(map[string]bool, len(opts))
+	for _, o := range opts {
+		f.opts[o] = false
+	}
+
+	f.variable = vars.New(name, "")
+	return f, nil
+}
+
 // Parse the OptionFlag.
 func (f *OptionFlag) Parse(args []string) (ok bool, err error) {
 	var opts []vars.Variable
@@ -46,13 +66,14 @@ func (f *OptionFlag) Parse(args []string) (ok bool, err error) {
 }
 
 // Option return parsed options.
-func (f *OptionFlag) Options() (present []string) {
+func (f *OptionFlag) Value() []string {
+	opts := []string{}
 	for o, set := range f.opts {
 		if set {
-			present = append(present, o)
+			opts = append(opts, o)
 		}
 	}
-	return present
+	return opts
 }
 
 // Default sets flag default.

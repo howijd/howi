@@ -10,7 +10,7 @@ import (
 )
 
 func TestOptionFlag(t *testing.T) {
-	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
+	flag, _ := Option("some-flag", []string{"a", "b", "c"}, "s")
 	if ok, err := flag.Parse([]string{"--some-flag=a"}); !ok || err != nil {
 		t.Error("expected option flag parser to return ok, ", ok, err)
 	}
@@ -21,7 +21,7 @@ func TestOptionFlag(t *testing.T) {
 }
 
 func TestOptionFlagFalse(t *testing.T) {
-	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
+	flag, _ := Option("some-flag", []string{"a", "b", "c"}, "s")
 	if present, err := flag.Parse([]string{"--some-flag=d"}); !errors.Is(err, ErrInvalidValue) {
 		t.Error("expected option flag parser to return !present and err, ", present, err)
 	}
@@ -32,7 +32,7 @@ func TestOptionFlagFalse(t *testing.T) {
 }
 
 func TestOptionFlagEmpty(t *testing.T) {
-	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
+	flag, _ := Option("some-flag", []string{"a", "b", "c"}, "s")
 	if present, err := flag.Parse([]string{"--some-flag"}); !errors.Is(err, ErrMissingValue) {
 		t.Error("expected option flag parser to return present and err, ", present, err)
 	}
@@ -58,7 +58,7 @@ func TestOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, err := NewOptionFlag(tt.name, tt.opts)
+			flag, err := Option(tt.name, tt.opts)
 			if len(tt.opts) == 0 {
 				if !errors.Is(err, ErrMissingOptions) {
 					t.Error("expected error while creating opt flag got: ", err)
@@ -83,7 +83,7 @@ func TestOptions(t *testing.T) {
 func TestOptionName(t *testing.T) {
 	for _, tt := range testflags() {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, err := NewOptionFlag(tt.name, []string{"a"})
+			flag, err := Option(tt.name, []string{"a"})
 			if !tt.valid {
 				if err == nil {
 					t.Errorf("invalid flag %q expected error got <nil>", tt.name)
@@ -107,7 +107,7 @@ func TestMultiOpt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, _ := NewOptionFlag(tt.name, tt.opts)
+			flag, _ := Option(tt.name, tt.opts)
 
 			var args []string
 			for _, o := range tt.opts {
@@ -118,7 +118,7 @@ func TestMultiOpt(t *testing.T) {
 			if !ok {
 				t.Errorf("expected to parse opt multi flag %q got %q", tt.name, err)
 			}
-			opts := flag.Options()
+			opts := flag.Value()
 			if len(opts) != len(tt.opts) {
 				t.Errorf("epexted flag %q to have %d opts got %d", tt.name, len(tt.opts), len(opts))
 			}
@@ -138,7 +138,7 @@ func TestOptionFlagDefaults(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, _ := NewOptionFlag(tt.name, tt.opts)
+			flag, _ := Option(tt.name, tt.opts)
 			flag.Default(tt.defaults)
 
 			args := []string{"random", "args"}
@@ -146,7 +146,7 @@ func TestOptionFlagDefaults(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected to parse opt flag %q got %q", tt.name, err)
 			}
-			opts := flag.Options()
+			opts := flag.Value()
 			if len(opts) != len(tt.defaults) {
 				t.Errorf("epexted flag %q to have %d opts got %d", tt.name, len(tt.defaults), len(opts))
 			}

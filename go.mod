@@ -1,4 +1,4 @@
-module pkg.howijd.network/howi/v8
+module github.com/howijd/howi/v9
 
 go 1.16
 
