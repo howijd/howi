@@ -147,7 +147,7 @@ func (f *Common) parse(args []string, read func([]vars.Variable) error) (bool, e
 	}
 
 	if len(args) == 0 {
-		return f.isPresent, nil
+		return false, fmt.Errorf("%w: no arguments", ErrParse)
 	}
 
 	var err error
@@ -162,11 +162,6 @@ func (f *Common) parseArgs(args []string, read func([]vars.Variable) error) (pr 
 		poses  []int // slice of positions (useful for multiflag)
 		pargs  []string
 	)
-
-	if len(args) == 0 {
-		err = fmt.Errorf("%w: no arguments", ErrParse)
-		return
-	}
 
 	poses, pargs, err = f.findFlag(args)
 	if err != nil {
@@ -187,25 +182,24 @@ func (f *Common) parseArgs(args []string, read func([]vars.Variable) error) (pr 
 		// handle bool flags
 		if f.variable.Type() == vars.TypeBool {
 			var value vars.Variable
+			falsestr := "false"
 			bval := "true"
-			if len(pargs) > pose && pargs[pose] == "false" {
-				bval = pargs[pose]
+			if len(pargs) > pose {
+				switch pargs[pose] {
+				case falsestr, "0", "off":
+					bval = falsestr
+					// case "true", "1", "on":
+				}
 			}
-			value, err = vars.NewTyped(f.name, bval, vars.TypeBool)
-			if err != nil {
-				return
-			}
+			// no need for err check since we only pass valid strings
+			value, _ = vars.NewTyped(f.name, bval, vars.TypeBool)
 			pr = true
 			values = append(values, value)
 			continue
 		}
 
 		if len(pargs) == pose {
-			err = fmt.Errorf("%w: %s", ErrMissingValue, f.name)
-			if err != nil {
-				return
-			}
-			break
+			return pr, fmt.Errorf("%w: %s", ErrMissingValue, f.name)
 		}
 		// update pose only once for first occourance
 		if f.pos == 0 {

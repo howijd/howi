@@ -141,7 +141,7 @@ func TestOptionFlagDefaults(t *testing.T) {
 			flag, _ := NewOptionFlag(tt.name, tt.opts)
 			flag.Default(tt.defaults)
 
-			var args []string
+			args := []string{"random", "args"}
 			_, err := flag.Parse(args)
 			if err != nil {
 				t.Errorf("expected to parse opt flag %q got %q", tt.name, err)

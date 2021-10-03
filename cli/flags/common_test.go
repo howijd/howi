@@ -30,7 +30,7 @@ func testflags() []testflag {
 		{"flag", nil, "def-val", false, false, false, true},
 		{"flag2", nil, nil, false, true, false, true},
 		{"flag3", nil, nil, true, false, false, true},
-		{"flag-sub-1", []string{"a", "b"}, "flag sub", false, false, false, true},
+		{"flag-sub-1", []string{"alias", "a", "b"}, "flag sub", false, false, false, true},
 		{"f", nil, "def-val", false, false, true, true},
 		{"flag2", nil, "def-val", false, false, false, true},
 		// invalid
@@ -91,6 +91,25 @@ func TestFlag(t *testing.T) {
 
 			if got != expected {
 				t.Errorf(".Flag want = %q, got = %q", expected, got)
+			}
+		})
+	}
+}
+
+func TestNoArgs(t *testing.T) {
+	for _, tt := range testflags() {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.valid {
+				return
+			}
+			flag, _ := New(tt.name)
+
+			if ok, err := flag.Parse([]string{}); ok || !errors.Is(err, ErrParse) {
+				t.Errorf("flag should fail to parse got %t %q", ok, err)
+			}
+			flag2, _ := New(tt.name)
+			if ok, err := flag2.Parse(nil); ok || !errors.Is(err, ErrParse) {
+				t.Errorf("flag should fail to parse got %t %q", ok, err)
 			}
 		})
 	}

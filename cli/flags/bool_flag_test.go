@@ -35,53 +35,70 @@ func TestBoolFlagPresent(t *testing.T) {
 	}
 }
 
-func TestBoolFlagValues(t *testing.T) {
-	var tests = []struct {
-		name  string
-		alias string
-		str   string
-		b     bool
-	}{
-		{"some-true-flag", "t", "true", true},
-		{"some-false-flag", "f", "false", false},
-	}
-	for _, tt := range tests {
-		flag, _ := NewBoolFlag(tt.name, tt.alias)
-		args := fmt.Sprintf("--%s=%s", tt.name, tt.str)
-		if present, err := flag.Parse([]string{args}); !present || err != nil {
-			t.Error("expected bool flag parser to return present, nil got ", present, err)
-		}
-		if !flag.Present() {
-			t.Error("expected bool flag to be present")
-		}
-		if flag.Value().Bool() != tt.b {
-			t.Error("expected bool value to be true got ", flag.Value().Bool())
-		}
-		if flag.String() != tt.str {
-			t.Errorf("expected bool value to be %q got %q", tt.str, flag.String())
-		}
-		if flag.Value().Type() != vars.TypeBool {
-			t.Errorf("expected bool value Type to be TypeBool got %v", flag.Value().Type())
-		}
-		flag.Unset()
-		if flag.Present() {
-			t.Error("expected bool flag not to be present")
-		}
+type booltest struct {
+	name  string
+	alias string
+	arg   string
+	str   string
+	b     bool
+}
 
-		flag2, _ := NewBoolFlag(tt.name, tt.alias)
-		args2 := fmt.Sprintf("-%s=%s", tt.alias, tt.str)
-		if present, err := flag2.Parse([]string{args2}); !present || err != nil {
-			t.Error("expected bool flag parser to return present, nil got ", present, err)
-		}
-		if !flag2.Present() {
-			t.Error("expected bool flag to be present")
-		}
-		if flag2.Value().Bool() != tt.b {
-			t.Error("expected bool value to be true got ", flag2.Value().Bool())
-		}
-		if flag2.String() != tt.str {
-			t.Errorf("expected bool value to be %q got %q", tt.str, flag2.String())
-		}
+func booltests() []booltest {
+	return []booltest{
+		{"some-true-flag", "t", "true", "true", true},
+		{"some-true-flag-on", "t", "on", "true", true},
+		{"some-true-flag-1", "t", "1", "true", true},
+		{"some-false-flag", "f", "false", "false", false},
+		{"some-false-flag-off", "f", "off", "false", false},
+		{"some-false-flag-0", "f", "0", "false", false},
+	}
+}
+func TestBoolFlagValues(t *testing.T) {
+	for _, tt := range booltests() {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, _ := NewBoolFlag(tt.name, tt.alias)
+			args := fmt.Sprintf("--%s=%s", tt.name, tt.arg)
+			if present, err := flag.Parse([]string{args}); !present || err != nil {
+				t.Error("expected bool flag parser to return present, nil got ", present, err)
+			}
+			if !flag.Present() {
+				t.Error("expected bool flag to be present")
+			}
+			if flag.Value().Bool() != tt.b {
+				t.Errorf("expected bool value to be %t got %t", tt.b, flag.Value().Bool())
+			}
+			if flag.String() != tt.str {
+				t.Errorf("expected bool value to be %q got %q", tt.str, flag.String())
+			}
+			if flag.Value().Type() != vars.TypeBool {
+				t.Errorf("expected bool value Type to be TypeBool got %v", flag.Value().Type())
+			}
+			flag.Unset()
+			if flag.Present() {
+				t.Error("expected bool flag not to be present")
+			}
+		})
+	}
+}
+
+func TestBoolFlagAliasValues(t *testing.T) {
+	for _, tt := range booltests() {
+		t.Run(tt.name, func(t *testing.T) {
+			flag, _ := NewBoolFlag(tt.name, tt.alias)
+			args := fmt.Sprintf("-%s=%s", tt.alias, tt.str)
+			if present, err := flag.Parse([]string{args}); !present || err != nil {
+				t.Error("expected bool flag parser to return present, nil got ", present, err)
+			}
+			if !flag.Present() {
+				t.Error("expected bool flag to be present")
+			}
+			if flag.Value().Bool() != tt.b {
+				t.Errorf("expected bool value to be %t got %t", tt.b, flag.Value().Bool())
+			}
+			if flag.String() != tt.str {
+				t.Errorf("expected bool value to be %q got %q", tt.str, flag.String())
+			}
+		})
 	}
 }
 

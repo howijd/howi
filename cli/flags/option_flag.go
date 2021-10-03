@@ -41,8 +41,6 @@ func (f *OptionFlag) Parse(args []string) (ok bool, err error) {
 			str = append(str, o.String())
 		}
 		f.variable = vars.New(f.name, strings.Join(str, "|"))
-	} else {
-		return f.isPresent, ErrMissingValue
 	}
 	return f.isPresent, err
 }
