@@ -294,6 +294,14 @@ func TestRequired(t *testing.T) {
 			if tt.required != flag.IsRequired() {
 				t.Error("flag should not be global by default")
 			}
+
+			if tt.required {
+				ok, err := flag.Parse([]string{"some", "random", "args"})
+				if ok || !errors.Is(err, ErrMissingRequired) {
+					t.Errorf("expected parser to fail on required flag %t, %q", ok, err)
+				}
+			}
+
 		})
 	}
 }
