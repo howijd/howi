@@ -21,12 +21,12 @@ func TestBoolFlagPresent(t *testing.T) {
 		t.Error("expected bool flag to be present")
 	}
 
-	if flag.Value().Bool() != true {
-		t.Error("expected bool value to be true got ", flag.Value().Bool())
+	if flag.Value() != true {
+		t.Error("expected bool value to be true got ", flag.Var().Bool())
 	}
 
-	if flag.Value().String() != "true" {
-		t.Error("expected bool value to be \"true\" got ", flag.Value().String())
+	if flag.String() != "true" {
+		t.Error("expected bool value to be \"true\" got ", flag.Var().String())
 	}
 
 	flag.Unset()
@@ -64,14 +64,14 @@ func TestBoolFlagValues(t *testing.T) {
 			if !flag.Present() {
 				t.Error("expected bool flag to be present")
 			}
-			if flag.Value().Bool() != tt.b {
-				t.Errorf("expected bool value to be %t got %t", tt.b, flag.Value().Bool())
+			if flag.Value() != tt.b {
+				t.Errorf("expected bool value to be %t got %t", tt.b, flag.Value())
 			}
 			if flag.String() != tt.str {
 				t.Errorf("expected bool value to be %q got %q", tt.str, flag.String())
 			}
-			if flag.Value().Type() != vars.TypeBool {
-				t.Errorf("expected bool value Type to be TypeBool got %v", flag.Value().Type())
+			if flag.Var().Type() != vars.TypeBool {
+				t.Errorf("expected bool value Type to be TypeBool got %v", flag.Var().Type())
 			}
 			flag.Unset()
 			if flag.Present() {
@@ -92,8 +92,8 @@ func TestBoolFlagAliasValues(t *testing.T) {
 			if !flag.Present() {
 				t.Error("expected bool flag to be present")
 			}
-			if flag.Value().Bool() != tt.b {
-				t.Errorf("expected bool value to be %t got %t", tt.b, flag.Value().Bool())
+			if flag.Value() != tt.b {
+				t.Errorf("expected bool value to be %t got %t", tt.b, flag.Value())
 			}
 			if flag.String() != tt.str {
 				t.Errorf("expected bool value to be %q got %q", tt.str, flag.String())
@@ -112,12 +112,12 @@ func TestBoolFlagNotPresent(t *testing.T) {
 		t.Error("expected bool flag not to be present")
 	}
 
-	if flag.Value().Bool() != false {
-		t.Error("expected bool value to be false got ", flag.Value().Bool())
+	if flag.Value() != false {
+		t.Error("expected bool value to be false got ", flag.Value())
 	}
 
-	if flag.Value().String() != "false" {
-		t.Error("expected bool value to be \"false\" got ", flag.Value().String())
+	if flag.String() != "false" {
+		t.Error("expected bool value to be \"false\" got ", flag.String())
 	}
 }
 

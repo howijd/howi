@@ -103,14 +103,14 @@ func (f *Common) Present() bool {
 	return f.isPresent
 }
 
-// Variable returns vars.Variable for this flag.
+// Var returns vars.Variable for this flag.
 // where key is flag and Value flags value.
-func (f *Common) Variable() vars.Variable {
+func (f *Common) Var() vars.Variable {
 	return f.variable
 }
 
-func (f *Common) Value() vars.Value {
-	return f.variable.Value()
+func (f *Common) Value() string {
+	return f.variable.String()
 }
 
 // Required sets this flag as required.
@@ -135,7 +135,7 @@ func (f *Common) Parse(args []string) (bool, error) {
 
 // String calls Value().String().
 func (f *Common) String() string {
-	return f.Value().String()
+	return f.Var().String()
 }
 
 // Parse value for the flag from given string.
@@ -256,11 +256,14 @@ func (f *Common) findFlag(args []string) (pos []int, pargs []string, err error) 
 		currflag = strings.TrimLeft(arg, "-")
 		if strings.Contains(arg, "=") {
 			var curr vars.Variable
-			curr, err = vars.NewFromKeyVal(arg)
-			if err != nil {
+			// no need for err check we alwways have key=val
+			curr, _ = vars.NewFromKeyVal(arg)
+			currflag = strings.TrimLeft(curr.Key(), "-")
+			// handle only possible errors
+			if len(currflag) == 0 {
+				err = fmt.Errorf("%w: invalid argument -=", ErrParse)
 				return
 			}
-			currflag = strings.TrimLeft(curr.Key(), "-")
 			split = true
 			pargs = append(pargs, curr.Key(), curr.String())
 		} else {

@@ -56,11 +56,9 @@ type (
 		Unset()
 		// Present reports whether flag was set in commandline
 		Present() bool
-		// Variable returns vars.Variable for this flag.
+		// Var returns vars.Variable for this flag.
 		// where key is flag and Value flags value.
-		Variable() vars.Variable
-		// Value returns vars.Value for given flag
-		Value() vars.Value
+		Var() vars.Variable
 		// Required sets this flag as required
 		Required()
 		// IsRequired returns true if this flag is required
@@ -113,7 +111,7 @@ type (
 )
 
 // New returns new common string flag. Argument "a" can be any nr of aliases.
-func New(name string, aliases ...string) (Flag, error) {
+func New(name string, aliases ...string) (*Common, error) {
 	f, err := newCommon(name, aliases...)
 	if err != nil {
 		return nil, err

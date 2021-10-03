@@ -301,7 +301,6 @@ func TestRequired(t *testing.T) {
 					t.Errorf("expected parser to fail on required flag %t, %q", ok, err)
 				}
 			}
-
 		})
 	}
 }
@@ -311,8 +310,8 @@ func TestStringFlagEmpty(t *testing.T) {
 	if ok, err := flag.Parse([]string{"--some-flag"}); ok || err == nil {
 		t.Error("expected string flag parser to return not ok, ", ok, err)
 	}
-	if flag.Value().String() != "" {
-		t.Error("expected num value to be \"\" got ", flag.Value().String())
+	if flag.String() != "" {
+		t.Error("expected num value to be \"\" got ", flag.String())
 	}
 }
 
@@ -328,7 +327,7 @@ func TestUnset(t *testing.T) {
 			args := []string{flag.Flag(), tval}
 			flag.Parse(args)
 
-			if flag.Value().String() != tval {
+			if flag.String() != tval {
 				t.Errorf("expected flag var.String() to eq %q got %q", tval, flag.String())
 			}
 
@@ -339,8 +338,8 @@ func TestUnset(t *testing.T) {
 				exp = fmt.Sprint(tt.defval)
 			}
 
-			if flag.Value().String() != exp {
-				t.Errorf("expected flag value to eq %q got %q", exp, flag.Value().String())
+			if flag.String() != exp {
+				t.Errorf("expected flag value to eq %q got %q", exp, flag.String())
 			}
 		})
 	}
@@ -351,7 +350,7 @@ func TestStringFlagPositionSpaces(t *testing.T) {
 	flag2, _ := New("some-flag2")
 	flag3, _ := New("some-flag3")
 	flag4, _ := New("n")
-	args := []string{"-n", "a", "--some-flag1", "value1", "--some-flag3", "value3", "--some-flag2", "value2"}
+	args := []string{"-n", "a", "--some-flag1", "value1", "random", "--some-flag3", "value3", "--some-flag2", "value2"}
 
 	if ok, err := flag1.Parse(args); !ok || err != nil {
 		t.Error("expected string flag parser to return ok, ", ok, err)
@@ -368,17 +367,26 @@ func TestStringFlagPositionSpaces(t *testing.T) {
 	if ok, err := flag4.Parse(args); !ok || err != nil {
 		t.Error("expected string flag parser to return ok, ", ok, err)
 	}
-	if flag1.Value().String() != "value1" {
-		t.Error("expected some-flag1 value to be \"value1\" got ", flag1.Value().String())
+	if flag1.String() != "value1" {
+		t.Error("expected some-flag1 value to be \"value1\" got ", flag1.String())
 	}
-	if flag2.Value().String() != "value2" {
-		t.Error("expected some-flag2 value to be \"value2\" got ", flag2.Value().String())
+	if flag2.String() != "value2" {
+		t.Error("expected some-flag2 value to be \"value2\" got ", flag2.String())
 	}
-	if flag3.Value().String() != "value3" {
-		t.Error("expected some-flag3 value to be \"value3\" got ", flag3.Value().String())
+	if flag3.Value() != "value3" {
+		t.Error("expected some-flag3 value to be \"value3\" got ", flag3.Value())
 	}
-	if flag4.Value().String() != "a" {
-		t.Error("expected n value to be \"a\" got ", flag4.Value().String())
+	if flag4.Value() != "a" {
+		t.Error("expected n value to be \"a\" got ", flag4.Value())
+	}
+}
+
+func TestInvalidArgs(t *testing.T) {
+	flag1, _ := New("some-flag1")
+	args := []string{"-n", "a", "--some-flag1", "-=value", "randome", "--some-flag3", "value3", "--some-flag2", "value2"}
+
+	if ok, err := flag1.Parse(args); ok || !errors.Is(err, ErrParse) {
+		t.Error("expected string flag parser to fail, got", ok, err)
 	}
 }
 
@@ -405,7 +413,7 @@ func TestVariable(t *testing.T) {
 			if flag.IsGlobal() {
 				t.Error("flag should be global")
 			}
-			v := flag.Variable()
+			v := flag.Var()
 			if v.Key() != tt.name {
 				t.Errorf("expected flag var.Key() to eq %q got %q", tt.name, v.Key())
 			}

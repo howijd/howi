@@ -15,8 +15,8 @@ func TestOptionFlag(t *testing.T) {
 		t.Error("expected option flag parser to return ok, ", ok, err)
 	}
 
-	if flag.Value().String() != "a" {
-		t.Error("expected option value to be \"a\" got ", flag.Value().String())
+	if flag.String() != "a" {
+		t.Error("expected option value to be \"a\" got ", flag.String())
 	}
 }
 
@@ -26,8 +26,8 @@ func TestOptionFlagFalse(t *testing.T) {
 		t.Error("expected option flag parser to return !present and err, ", present, err)
 	}
 
-	if flag.Value().String() != "" {
-		t.Error("expected option value to be \"\" got ", flag.Value().String())
+	if flag.String() != "" {
+		t.Error("expected option value to be \"\" got ", flag.String())
 	}
 }
 
@@ -37,8 +37,8 @@ func TestOptionFlagEmpty(t *testing.T) {
 		t.Error("expected option flag parser to return present and err, ", present, err)
 	}
 
-	if flag.Value().String() != "" {
-		t.Error("expected option value to be \"\" got ", flag.Value().String())
+	if flag.String() != "" {
+		t.Error("expected option value to be \"\" got ", flag.String())
 	}
 }
 
