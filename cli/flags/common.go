@@ -6,6 +6,7 @@ package flags
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/mkungla/vars/v5"
@@ -17,9 +18,9 @@ func (f *Common) Name() string {
 }
 
 // Default sets flag default.
-func (f *Common) Default(def ...interface{}) vars.Value {
+func (f *Common) Default(def ...interface{}) vars.Variable {
 	if len(def) > 0 && f.defval.Empty() {
-		f.defval = vars.NewValue(def[0])
+		f.defval = vars.New(f.name+":default", def[0])
 	}
 	return f.defval
 }
@@ -123,9 +124,11 @@ func (f *Common) IsRequired() bool {
 }
 
 // Parse the StringFlag.
-func (f *Common) Parse(args *[]string) (bool, error) {
-	return f.parse(args, func(v vars.Value) (err error) {
-		f.variable = vars.New(f.name, v)
+func (f *Common) Parse(args []string) (bool, error) {
+	return f.parse(args, func(vv []vars.Variable) (err error) {
+		if len(vv) > 0 {
+			f.variable = vv[0]
+		}
 		return err
 	})
 }
@@ -138,113 +141,155 @@ func (f *Common) String() string {
 // Parse value for the flag from given string.
 // It returns true if flag has been parsed
 // and error if flag has been already parsed.
-func (f *Common) parse(args *[]string, read func(vars.Value) error) (bool, error) {
+func (f *Common) parse(args []string, read func([]vars.Variable) error) (bool, error) {
 	if f.parsed || f.isPresent {
 		return f.isPresent, fmt.Errorf("%w: %s", ErrFlagAlreadyParsed, f.name)
 	}
 
-	if args == nil || len(*args) == 0 {
+	if len(args) == 0 {
 		return f.isPresent, nil
 	}
-	return f.parseArgs(args, read, false)
-}
 
-func (f *Common) parseAll(args *[]string, read func(vars.Value) error) (ok bool, err error) {
-	f.isPresent, err = f.parseArgs(args, read, true)
-
-	// search more
-	if f.isPresent {
-		for isPresent, err := f.parseArgs(args, read, true); isPresent && err != nil; {
-		}
-	}
-
+	var err error
+	f.isPresent, err = f.parseArgs(args, read)
 	return f.isPresent, err
 }
 
 //nolint: funlen,gocognit,cyclop
-func (f *Common) parseArgs(args *[]string, read func(vars.Value) error, all bool) (bool, error) {
-	seek := false
-	var flag string
-	value := f.defval
-	for i, arg := range *args {
-		if len(arg) == 0 {
-			return f.isPresent, nil
-		}
+func (f *Common) parseArgs(args []string, read func([]vars.Variable) error) (pr bool, err error) {
+	var (
+		values = []vars.Variable{}
+		poses  []int // slice of positions (useful for multiflag)
+		pargs  []string
+	)
 
-		if arg[0] != '-' && !seek {
-			f.pos++
+	if len(args) == 0 {
+		err = fmt.Errorf("%w: no arguments", ErrParse)
+		return
+	}
+
+	poses, pargs, err = f.findFlag(args)
+	if err != nil {
+		return
+	}
+
+	// locate flag positions
+	if len(poses) == 0 {
+		if f.required {
+			err = fmt.Errorf("%w: %s", ErrMissingRequired, f.name)
+		}
+		return
+	}
+
+	sort.Ints(poses)
+
+	for _, pose := range poses {
+		// handle bool flags
+		if f.variable.Type() == vars.TypeBool {
+			var value vars.Variable
+			bval := "true"
+			if len(pargs) > pose && pargs[pose] == "false" {
+				bval = pargs[pose]
+			}
+			value, err = vars.NewTyped(f.name, bval, vars.TypeBool)
+			if err != nil {
+				return
+			}
+			pr = true
+			values = append(values, value)
 			continue
 		}
 
-		if seek { //nolint:nestif,gocritic
-			seek = false
-
-			value = vars.NewValue((*args)[0])
-			*args = append((*args)[:i-1], (*args)[i:]...)
-
-			if err := read(value); err != nil {
-				return f.isPresent, err
+		if len(pargs) == pose {
+			err = fmt.Errorf("%w: %s", ErrMissingValue, f.name)
+			if err != nil {
+				return
 			}
-
-			goto validate
-		} else if strings.Contains(arg, "=") {
-			kv, _ := vars.NewFromKeyVal(strings.TrimLeft(arg, "-"))
-			flag = kv.Key()
-			value = vars.NewValue(kv.String())
-		} else {
-			flag = strings.TrimLeft(arg, "-")
-			if f.variable.Type() == vars.TypeBool {
-				value = vars.NewValue("true")
-			} else {
-				// seek value from next arg
-				seek = true
-			}
+			break
 		}
+		// update pose only once for first occourance
+		if f.pos == 0 {
+			f.pos = pose
+		}
+		pr = true
+		value := pargs[pose]
+		// if we get other flags we can validate is value a flag or not
+		values = append(values, vars.New(f.name, value))
+	}
 
-		if flag == f.name {
-			f.isPresent = true
-			*args = append((*args)[:i], (*args)[i+1:]...)
-			if seek {
+	// what was before the flag including flag it self
+	pre := pargs[:poses[0]]
+	// check global since first arg was a command
+	if !strings.HasPrefix(pre[0], "-") {
+		cmd := pre[0]
+		opts := 0
+		for _, arg := range pargs {
+			if arg[0] == '-' {
+				opts = 0
 				continue
 			}
-			if err := read(value); err != nil {
-				return f.isPresent, err
+			opts++
+			if opts > 1 {
+				cmd = arg
 			}
-			goto validate
+		}
+		if f.command == "" || cmd == f.command {
+			f.global = true
+		}
+	}
+	err = read(values)
+	return pr, err
+}
+
+// findFlag reports flag positions if flag is present and returns normalized
+// arg slice where key=val is already correctly splitted.
+func (f *Common) findFlag(args []string) (pos []int, pargs []string, err error) {
+	var (
+		currflag string
+		split    bool
+		rpos     int // real pose differs if flag=value is provided
+	)
+
+	for _, arg := range args {
+		rpos++
+
+		if len(arg) == 0 || arg[0] != '-' {
+			pargs = append(pargs, arg)
+			continue
 		}
 
-		hasAlias := false
-		// if we got so far lets search alias then
-		for _, alias := range f.aliases {
-			if flag == alias {
-				f.isPresent = true
-				*args = append((*args)[:i], (*args)[i+1:]...)
-				if seek {
-					hasAlias = true
+		// found flag
+		currflag = strings.TrimLeft(arg, "-")
+		if strings.Contains(arg, "=") {
+			var curr vars.Variable
+			curr, err = vars.NewFromKeyVal(arg)
+			if err != nil {
+				return
+			}
+			currflag = strings.TrimLeft(curr.Key(), "-")
+			split = true
+			pargs = append(pargs, curr.Key(), curr.String())
+		} else {
+			pargs = append(pargs, arg)
+		}
+
+		// is our flag?
+		if currflag == f.name {
+			pos = append(pos, rpos)
+		} else {
+			// or is one of aliases
+			for _, alias := range f.aliases {
+				if currflag == alias {
+					pos = append(pos, rpos)
 					break
 				}
-				if err := read(value); err != nil {
-					return f.isPresent, err
-				}
-				goto validate
 			}
 		}
-		seek = hasAlias
-	}
 
-validate:
-	f.parsed = true
-	// was it global
-	if !f.variable.Empty() && f.pos == 0 {
-		f.global = true
+		// not this one
+		if split {
+			rpos++
+		}
 	}
-	if seek {
-		return f.isPresent, fmt.Errorf("%w: did not find value for flag %q", ErrFlag, f.name)
-	}
-	// set default
-	if !f.isPresent && !f.defval.Empty() && !all {
-		return false, read(f.defval)
-	}
-
-	return f.isPresent, nil
+	return pos, pargs, err
 }

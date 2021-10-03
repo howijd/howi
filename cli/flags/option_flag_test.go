@@ -11,7 +11,7 @@ import (
 
 func TestOptionFlag(t *testing.T) {
 	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
-	if ok, err := flag.Parse(&[]string{"--some-flag=a"}); !ok || err != nil {
+	if ok, err := flag.Parse([]string{"--some-flag=a"}); !ok || err != nil {
 		t.Error("expected option flag parser to return ok, ", ok, err)
 	}
 
@@ -22,7 +22,7 @@ func TestOptionFlag(t *testing.T) {
 
 func TestOptionFlagFalse(t *testing.T) {
 	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
-	if present, err := flag.Parse(&[]string{"--some-flag=d"}); !present || err == nil {
+	if present, err := flag.Parse([]string{"--some-flag=d"}); !errors.Is(err, ErrInvalidValue) {
 		t.Error("expected option flag parser to return !present and err, ", present, err)
 	}
 
@@ -33,7 +33,7 @@ func TestOptionFlagFalse(t *testing.T) {
 
 func TestOptionFlagEmpty(t *testing.T) {
 	flag, _ := NewOptionFlag("some-flag", []string{"a", "b", "c"}, "s")
-	if present, err := flag.Parse(&[]string{"--some-flag"}); !present || err == nil {
+	if present, err := flag.Parse([]string{"--some-flag"}); !errors.Is(err, ErrMissingValue) {
 		t.Error("expected option flag parser to return present and err, ", present, err)
 	}
 
@@ -53,14 +53,14 @@ func TestOptions(t *testing.T) {
 		{"basic1", nil, nil, "", nil},
 		{"basic2", []string{"opt1", "opt2"}, nil, "opt3", ErrInvalidValue},
 		{"basic3", []string{"opt1", "opt2"}, nil, "opt2", nil},
-		{"basic3", []string{"opt1", "opt2"}, nil, "", ErrMissingOption},
+		{"basic3", []string{"opt1", "opt2"}, nil, "", ErrInvalidValue},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			flag, err := NewOptionFlag(tt.name, tt.opts)
 			if len(tt.opts) == 0 {
-				if !errors.Is(err, ErrMissingOption) {
+				if !errors.Is(err, ErrMissingOptions) {
 					t.Error("expected error while creating opt flag got: ", err)
 				}
 				return
@@ -72,7 +72,7 @@ func TestOptions(t *testing.T) {
 			}
 
 			args := []string{"--" + tt.name, tt.val}
-			_, err = flag.Parse(&args)
+			_, err = flag.Parse(args)
 			if !errors.Is(err, tt.err) {
 				t.Errorf("expected error %q got %q", tt.err, err)
 			}
@@ -114,7 +114,7 @@ func TestMultiOpt(t *testing.T) {
 				args = append(args, []string{"--" + tt.name, o}...)
 			}
 
-			ok, err := flag.Parse(&args)
+			ok, err := flag.Parse(args)
 			if !ok {
 				t.Errorf("expected to parse opt multi flag %q got %q", tt.name, err)
 			}
@@ -142,7 +142,7 @@ func TestOptionFlagDefaults(t *testing.T) {
 			flag.Default(tt.defaults)
 
 			var args []string
-			_, err := flag.Parse(&args)
+			_, err := flag.Parse(args)
 			if err != nil {
 				t.Errorf("expected to parse opt flag %q got %q", tt.name, err)
 			}

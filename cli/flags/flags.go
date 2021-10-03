@@ -16,9 +16,12 @@ import (
 
 var (
 	ErrFlag              = errors.New("flag error")
-	ErrMissingOption     = errors.New("need atleast one option")
+	ErrParse             = errors.New("flag parse error")
+	ErrMissingValue      = errors.New("missing value for flag")
 	ErrInvalidValue      = errors.New("invalid value for flag")
 	ErrFlagAlreadyParsed = errors.New("flag is already parsed")
+	ErrMissingRequired   = errors.New("missing required flag")
+	ErrMissingOptions    = errors.New("missing options")
 )
 
 type (
@@ -27,7 +30,7 @@ type (
 		// Parse value for the flag from given string. It returns true if flag
 		// was found in provided args string and false if not.
 		// error is returned when flag was set but had invalid value.
-		Parse(*[]string) (bool, error)
+		Parse([]string) (bool, error)
 		// Get primary name for the flag. Usually that is long option
 		Name() string
 		// Usage returns a usage description for that flag
@@ -46,8 +49,7 @@ type (
 		IsHidden() bool
 		// IsGlobal reports whether this flag was global and was set before any command or arg
 		IsGlobal() bool
-		// Pos returns flags position after command. Case of global since app name
-		// min value 1 which means first global flag or first flag after command
+		// Pos returns flags position after command. In case of mulyflag first position is reported
 		Pos() int
 		// Unset unsets the value for the flag if it was parsed, handy for cases where
 		// one flag cancels another like --debug cancels --verbose
@@ -64,7 +66,7 @@ type (
 		// IsRequired returns true if this flag is required
 		IsRequired() bool
 		// Set flag default value
-		Default(def ...interface{}) vars.Value
+		Default(def ...interface{}) vars.Variable
 		// String calls Value().String()
 		String() string
 	}
@@ -91,20 +93,17 @@ type (
 		// is this flag required
 		required bool
 		// default value
-		defval vars.Value
+		defval vars.Variable
 		// flag already parsed
 		parsed bool
+		// potential command after which this flag was found
+		command string
 	}
 
 	// OptionFlag is string flag type which can have value of one of the options.
 	OptionFlag struct {
 		Common
 		opts map[string]bool
-	}
-
-	// NumFlag is numeric flag type with default value 0.
-	NumFlag struct {
-		Common
 	}
 
 	// BoolFlag is boolean flag type with default value "false".
@@ -123,17 +122,6 @@ func New(name string, aliases ...string) (Flag, error) {
 	return f, err
 }
 
-// NewNumFlag returns new numeric flag. Argument "a" can be any nr of aliases.
-func NewNumFlag(name string, aliases ...string) (*NumFlag, error) {
-	c, err := newCommon(name, aliases...)
-	if err != nil {
-		return nil, err
-	}
-	f := &NumFlag{*c}
-	f.variable, _ = vars.NewTyped(name, "0", vars.TypeFloat64)
-	return f, nil
-}
-
 // NewBoolFlag returns new bool flag. Argument "a" can be any nr of aliases.
 func NewBoolFlag(name string, aliases ...string) (*BoolFlag, error) {
 	c, err := newCommon(name, aliases...)
@@ -149,7 +137,7 @@ func NewBoolFlag(name string, aliases ...string) (*BoolFlag, error) {
 // of options this flag accepts.
 func NewOptionFlag(name string, opts []string, aliases ...string) (*OptionFlag, error) {
 	if len(opts) == 0 {
-		return nil, ErrMissingOption
+		return nil, ErrMissingOptions
 	}
 	c, err := newCommon(name, aliases...)
 	if err != nil {
