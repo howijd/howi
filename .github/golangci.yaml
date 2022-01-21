@@ -126,7 +126,7 @@ linters:
     - asciicheck
     - bodyclose
     - cyclop
-    - depguard
+    # - depguard https://github.com/OpenPeeDeeP/depguard
     - dogsled
     - dupl
     - durationcheck
@@ -191,7 +191,7 @@ linters-settings:
     # put imports beginning with prefix after 3rd-party packages;
     # only support one prefix
     # if not set, use goimports.local-prefixes
-    local-prefixes: howi/v8/
+    local-prefixes: github.com/howijd/howi/
   goconst:
     ignore-calls: true
     ignore-tests: false
