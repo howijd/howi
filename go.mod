@@ -1,3 +1,3 @@
 module github.com/howijd/howi
 
-go 1.16
+go 1.18
